@@ -1,27 +1,30 @@
 from . utils import read_csv
+from . utils import MsgLoad
 from json import dump
-from time import time
 
 __all__ = ['create_report']
 
 
-def create_report(filename):
+def create_report(filename, export=False):
     """Analyze and create a report of a CSV file.
 
-    This function returns nothing but creates 'a report.json' file.
+    This function returns the report dictionary and
+    optionally creates 'a report.json' file.
 
     Params:
         filename (string): name of the file that contains the data
+        export (boolean): if True the function will export a report.json
+
+    Returns:
+        report (dict)
     """
+
+    msg_load = MsgLoad()
 
     report = {
         'features': {},
         'num_records': 0
     }
-
-    loading_bars = ['▙', '▛', '▜', '▟']
-    loading_counter = 0
-    start_time = time()
 
     print("-> Open CSV file")
 
@@ -57,20 +60,12 @@ def create_report(filename):
 
         report['num_records'] += 1
 
-        if time() - start_time >= 0.42:
-            print("-> Parsed {} records {}".format(
-                report['num_records'],
-                loading_bars[loading_counter]
-            ), end='\r')
-            start_time = time()
-            loading_counter = (loading_counter + 1) % 4
+        msg_load.show("-> Parsed {} records".format(report['num_records']))
 
     print("-> Parsed {} records {}".format(
         report['num_records'],
         "..."
     ))
-
-    start_time = time()
 
     for num, (feature, details) in enumerate(report['features'].items(), 1):
         if details['type'] == 'number':
@@ -87,21 +82,18 @@ def create_report(filename):
             )
             details['len'] = len(details['set'])
 
-        if time() - start_time >= 0.42:
-            print("-> Analyzed {} features {}".format(
-                num,
-                loading_bars[loading_counter]
-            ), end='\r')
-            start_time = time()
-            loading_counter = (loading_counter + 1) % 4
+        msg_load.show("-> Analyzed {} features".format(num))
 
     print("-> Analyzed {} features {}".format(
         len(report['features']),
         "..."
     ))
 
-    print("-> Write report.json file")
-    with open('report.json', 'w') as report_file:
-        dump(report, report_file, indent=2)
+    if export:
+        print("-> Write report.json file")
+        with open('report.json', 'w') as report_file:
+            dump(report, report_file, indent=2)
 
-    print("-> Done!")
+    print("-> Report done!")
+
+    return report

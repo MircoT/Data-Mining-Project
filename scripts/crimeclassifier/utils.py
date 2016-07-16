@@ -2,8 +2,24 @@ from os import path
 from io import TextIOWrapper
 from zipfile import ZipFile
 from csv import DictReader
+from time import time
 
-__all__ = ['read_csv']
+__all__ = ['read_csv', 'MsgLoad']
+
+
+class MsgLoad(object):
+
+    def __init__(self):
+        self.loading_bars = ['▙', '▛', '▜', '▟']
+        self.loading_counter = 0
+        self.start_time = time()
+
+    def show(self, message):
+        if time() - self.start_time >= 0.42:
+            print("{} {}".format(
+                message, self.loading_bars[self.loading_counter]), end='\r')
+            self.start_time = time()
+            self.loading_counter = (self.loading_counter + 1) % 4
 
 
 def read_csv(filename):
