@@ -9,12 +9,20 @@ __all__ = ['read_csv', 'MsgLoad']
 
 class MsgLoad(object):
 
+    """Print a cool loading on console."""
+
     def __init__(self):
         self.loading_bars = ['▙', '▛', '▜', '▟']
         self.loading_counter = 0
         self.start_time = time()
 
     def show(self, message):
+        """Show the message with the loading spin.
+
+        Args:
+            message (string): the text to print
+        """
+
         if time() - self.start_time >= 0.42:
             print("{} {}".format(
                 message, self.loading_bars[self.loading_counter]), end='\r')
