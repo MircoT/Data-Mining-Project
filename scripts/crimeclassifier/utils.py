@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from os import path
 from io import TextIOWrapper
 from zipfile import ZipFile
@@ -12,7 +13,7 @@ class MsgLoad(object):
     """Print a cool loading on console."""
 
     def __init__(self):
-        self.loading_bars = ['▙', '▛', '▜', '▟']
+        self.loading_bars = ['▄', '█', '▀', '█']
         self.loading_counter = 0
         self.start_time = time()
 
