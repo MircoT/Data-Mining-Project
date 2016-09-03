@@ -31,7 +31,7 @@ class MsgLoad(object):
             self.loading_counter = (self.loading_counter + 1) % 4
 
 
-def read_csv(filename):
+def read_csv(filename, chunk=1):
     """Extract the data from a CSV file format.
 
     The data file can be in zip format or a plain CSV. This
@@ -53,12 +53,28 @@ def read_csv(filename):
     if extension == '.zip':
         with ZipFile(filename) as zip_f:
             with zip_f.open(path.basename(real_filename), 'r') as data_f:
-                for row in DictReader(
+                reader_obj = DictReader(
                         TextIOWrapper(data_f, newline=''),
-                        delimiter=','):
-                    yield row
+                        delimiter=',')
+                try:
+                    while True:
+                        buffer = [next(reader_obj) for _ in range(chunk)]
+                        if chunk == 1:
+                            yield buffer[0]
+                        else:
+                            yield buffer
+                except StopIteration:
+                    pass
 
     elif extension == '.csv':
         with open(filename, 'r', newline='') as data_f:
-            for row in DictReader(data_f, delimiter=','):
-                yield row
+            reader_obj = DictReader(data_f, delimiter=',')
+            try:
+                while True:
+                    buffer = [next(reader_obj) for _ in range(chunk)]
+                    if chunk == 1:
+                        yield buffer[0]
+                    else:
+                        yield buffer
+            except StopIteration:
+                pass
