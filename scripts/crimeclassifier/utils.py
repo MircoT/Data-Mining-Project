@@ -41,6 +41,7 @@ def read_csv(filename, chunk=1):
 
     Params:
         filename (string): name of the file that contains the data.
+        chunk (int): slice size generated
 
     Returns:
         generator: data extracted from the CSV file.
@@ -54,8 +55,8 @@ def read_csv(filename, chunk=1):
         with ZipFile(filename) as zip_f:
             with zip_f.open(path.basename(real_filename), 'r') as data_f:
                 reader_obj = DictReader(
-                        TextIOWrapper(data_f, newline=''),
-                        delimiter=',')
+                    TextIOWrapper(data_f, newline=''),
+                    delimiter=',')
                 try:
                     while True:
                         buffer = [next(reader_obj) for _ in range(chunk)]

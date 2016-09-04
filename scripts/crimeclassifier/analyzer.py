@@ -1,6 +1,7 @@
 from . utils import read_csv
 from . utils import MsgLoad
 from json import dump
+from time import time
 
 __all__ = ['create_report']
 
@@ -18,6 +19,8 @@ def create_report(filename, export=False):
     Returns:
         report (dict)
     """
+
+    start = time()
 
     msg_load = MsgLoad()
 
@@ -94,6 +97,6 @@ def create_report(filename, export=False):
         with open('report.json', 'w') as report_file:
             dump(report, report_file, indent=2)
 
-    print("-> Report done!")
+    print("-> Report done in {:0.3f} sec.".format(time() - start))
 
     return report
