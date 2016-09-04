@@ -1,0 +1,16 @@
+{
+	"out_filename": "test",
+	"train_percentage": 80,
+	"features": [
+		"Dates",
+		"Category",
+		"DayOfWeek",
+		"PdDistrict",
+		"Address",
+		"X",
+		"Y"
+	],
+	"feature_class_name": "Category",
+	"class_filter": []
+}
+
