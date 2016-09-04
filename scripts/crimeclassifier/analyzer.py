@@ -2,6 +2,7 @@ from . utils import read_csv
 from . utils import MsgLoad
 from json import dump
 from time import time
+from os.path import basename
 
 __all__ = ['create_report']
 
@@ -93,8 +94,9 @@ def create_report(filename, export=False):
     ))
 
     if export:
-        print("-> Write report.json file")
-        with open('report.json', 'w') as report_file:
+        print("-> Write {}_report.json file".format(basename(filename)))
+        with open('{}_report.json'.format(
+                basename(filename)), 'w') as report_file:
             dump(report, report_file, indent=2)
 
     print("-> Report done in {:0.3f} sec.".format(time() - start))
