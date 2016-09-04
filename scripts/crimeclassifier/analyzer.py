@@ -27,7 +27,8 @@ def create_report(filename, export=False):
 
     report = {
         'features': {},
-        'num_records': 0
+        'num_records': 0,
+        'filename': filename
     }
 
     print("-> Open CSV file")
