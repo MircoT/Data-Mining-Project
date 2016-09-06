@@ -10,6 +10,7 @@
 		"Y"
 	],
 	"feature_class_name": "Category",
-	"class_filter": []
+	"class_filter": [],
+	"scaled_sets": true
 }
 
