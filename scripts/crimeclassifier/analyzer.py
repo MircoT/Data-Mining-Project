@@ -3,6 +3,7 @@ from . utils import MsgLoad
 from json import dump
 from time import time
 from os.path import basename
+from os.path import relpath
 from datetime import datetime
 
 __all__ = ['create_report']
@@ -82,7 +83,7 @@ def create_report(filename, export=False):
     report = {
         'features': {},
         'num_records': 0,
-        'filename': filename
+        'filename': relpath(filename)
     }
 
     print("> Open CSV file")
