@@ -86,11 +86,11 @@ def create_report(filename, export=False):
         'filename': relpath(filename)
     }
 
-    print("> Open CSV file")
+    print("-> Open CSV file")
 
     for row in read_csv(filename):
         if len(report['features']) == 0:
-            print("> Read features")
+            print("-> Read features")
             for feature in row.keys():
                 report['features'][feature] = {
                     'type': None
@@ -120,9 +120,9 @@ def create_report(filename, export=False):
 
         report['num_records'] += 1
 
-        msg_load.show("> Parsed {} records".format(report['num_records']))
+        msg_load.show("-> Parsed {} records".format(report['num_records']))
 
-    print("> Parsed {} records {}".format(
+    print("-> Parsed {} records {}".format(
         report['num_records'],
         "..."
     ))
@@ -136,9 +136,9 @@ def create_report(filename, export=False):
             details['set'] = to_list_sorted_by_value(details['set'])
             details['len'] = len(details['set'])
 
-        msg_load.show("> Analyzed {} features".format(num))
+        msg_load.show("-> Analyzed {} features".format(num))
 
-    print("> Analyzed {} features {}".format(
+    print("-> Analyzed {} features {}".format(
         len(report['features']),
         "..."
     ))

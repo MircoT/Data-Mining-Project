@@ -1,10 +1,13 @@
 from . utils import read_csv
 from . utils import MsgLoad
 from json import load
+from json import dump
 from os import path
+from os import remove
 from random import randint
 from datetime import datetime
 from struct import pack
+import zipfile
 
 __all__ = ['to_bin']
 
@@ -95,14 +98,15 @@ def get_fix_range_value(tot_elms, index):
     return float((index / tot_elms) - step)
 
 
-def write_binary(data_filename, label_filename, map_filename,
-                 num_elems, num_classes, bucket):
+def write_binary(data_filename, label_filename, map_filename, stat_filename,
+                 num_elems, num_classes, bucket, class_list):
     """Put data into binary format.
 
     Params:
         data_filename (string): name of the data file to write
         label_filename (string): name of the label file to write
         map_filename (string): name of the map file to write
+        stat_filename (string): name of the stats file to write
         num_elems (int): number of elements of current set
         num_classes (int): number of the current classes
         bucket (list): list of records
@@ -110,6 +114,8 @@ def write_binary(data_filename, label_filename, map_filename,
 
     msg_load = MsgLoad()
     binary_index = 0  # counter
+
+    stats = {}
 
     with open(data_filename, "wb") as data_f:
 
@@ -135,6 +141,10 @@ def write_binary(data_filename, label_filename, map_filename,
                     csv_index, (cur_features, cur_class) = bucket.pop(
                         randint(0, len(bucket) - 1))
 
+                    if class_list[cur_class] not in stats:
+                        stats[class_list[cur_class]] = 0
+                    stats[class_list[cur_class]] += 1
+
                     data_f.write(
                         pack('d' * len(cur_features), *cur_features))
 
@@ -147,7 +157,40 @@ def write_binary(data_filename, label_filename, map_filename,
                     msg_load.show(
                         "--> Writed {} of {}".format(binary_index, num_elems))
 
-    msg_load.show("--> Writed {} of {}".format(binary_index, num_elems))
+    with open(stat_filename, 'w') as stat_file:
+        dump(stats, stat_file, indent=2)
+
+    print("--> Writed {} of {} √".format(binary_index, num_elems))
+
+
+def gen_f_name(dataset_path, name, set_):
+    """Create all filename fot a kind of set.
+
+    The path will be relative of the report dataset_path.
+
+    Params:
+        dataset_path (string): the dataset path in the report
+        name (string): the target name
+        set_ (string): the type of the set
+
+    Example:
+        name = foo
+        set_ = bar
+
+        will generate:
+
+        - foo-bar-crimes
+        - foo-bar-crimes-label
+        - foo-bar-crimes-map
+        - foo-bar-crimes.json
+    """
+    return [
+        path.join(
+            path.dirname(dataset_path),
+            "{}-{}-crimes{}".format(name, set_, type_)
+        )
+        for type_ in ['', '-label', '-map', '.json']
+    ]
 
 
 def to_bin(report_f, config_f):
@@ -265,37 +308,50 @@ def to_bin(report_f, config_f):
                 # (csv_index, ([features], class))
                 (num, row_to_vector(row, report, selected_features, fcn)))
 
-    print("--> Parsed {} of {}".format(num, report['num_records']))
+    print("--> Parsed {} of {} √".format(num, report['num_records']))
 
+    train_percentage = config.get("train_percentage", 80.)
     tot_crimes_available = len(crimes)
     train_num = int(
-        tot_crimes_available / 100.0 * config.get("train_percentage", 80.))
+        tot_crimes_available / 100.0 * train_percentage)
     test_num = tot_crimes_available - train_num
 
     print("-> Tot crimes available: {}".format(tot_crimes_available))
 
     dataset_folder = path.dirname(report['filename'])
 
-    print("-> Generate train set")
+    print("-> Generate train set [{:0.2f}% of {}]".format(
+        train_percentage, tot_crimes_available))
 
-    train_filename = path.join(
-        dataset_folder, "{}-train-crimes".format(config['out_filename']))
-    train_label_filename = path.join(
-        dataset_folder, "{}-train-crimes-label".format(config['out_filename']))
-    train_map_filename = path.join(
-        dataset_folder, "{}-train-crimes-map".format(config['out_filename']))
+    train_filenames = gen_f_name(
+        report['filename'], path.relpath(config['out_filename']), 'train')
 
-    write_binary(train_filename, train_label_filename, train_map_filename,
-                 train_num, len(crimes[0][1][0]), crimes)
+    write_binary(*train_filenames,
+                 train_num, len(crimes[0][1][0]), crimes,
+                 [name for name, count in report['features'][fcn]['set']])
 
-    print("-> Generate test set")
+    print("-> Generate test set [{:0.2f}% of {}]".format(
+        100. - train_percentage, tot_crimes_available))
 
-    test_filename = path.join(
-        dataset_folder, "{}-test-crimes".format(config['out_filename']))
-    test_label_filename = path.join(
-        dataset_folder, "{}-test-crimes-label".format(config['out_filename']))
-    test_map_filename = path.join(
-        dataset_folder, "{}-test-crimes-map".format(config['out_filename']))
+    test_filenames = gen_f_name(
+        report['filename'], path.relpath(config['out_filename']), 'test')
 
-    write_binary(test_filename, test_label_filename, test_map_filename,
-                 test_num, len(crimes[0][1][0]), crimes)
+    write_binary(*test_filenames,
+                 test_num, len(crimes[0][1][0]), crimes,
+                 [name for name, count in report['features'][fcn]['set']])
+
+    print("-> Create zip file")
+
+    with zipfile.ZipFile(path.join(
+        path.dirname(report['filename']),
+        "{}.zip".format(config['out_filename'])
+    ), "w", zipfile.ZIP_DEFLATED) as zip_file:
+
+        for file_ in train_filenames + test_filenames:
+            print(" "*70, end='\r')
+            print("--> Zip {}".format(file_), end='\r')
+            zip_file.write(file_, arcname=path.basename(file_))
+            remove(file_)
+
+    print(" "*70, end='\r')
+    print("-> Zip file Done")
