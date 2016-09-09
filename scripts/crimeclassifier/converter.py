@@ -126,6 +126,7 @@ def write_binary(data_filename, label_filename, map_filename, stat_filename,
         with open(label_filename, "wb") as label_f:
 
             label_f.write(pack('>I', 3072 + 1))  # integer
+            # num records
             label_f.write(pack('>I', num_elems))
             # num of classes
             label_f.write(pack('>I', num_classes))
@@ -327,7 +328,7 @@ def to_bin(report_f, config_f):
         report['filename'], path.relpath(config['out_filename']), 'train')
 
     write_binary(*train_filenames,
-                 train_num, len(crimes[0][1][0]), crimes,
+                 train_num, len(class_filter), crimes,
                  [name for name, count in report['features'][fcn]['set']])
 
     print("-> Generate test set [{:0.2f}% of {}]".format(
@@ -337,7 +338,7 @@ def to_bin(report_f, config_f):
         report['filename'], path.relpath(config['out_filename']), 'test')
 
     write_binary(*test_filenames,
-                 test_num, len(crimes[0][1][0]), crimes,
+                 test_num, len(class_filter), crimes,
                  [name for name, count in report['features'][fcn]['set']])
 
     print("-> Create zip file")
