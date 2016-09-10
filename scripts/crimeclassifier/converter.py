@@ -110,12 +110,82 @@ def write_binary(data_filename, label_filename, map_filename, stat_filename,
         num_elems (int): number of elements of current set
         num_classes (int): number of the current classes
         bucket (list): list of records
+
+    File format:
+
+        +-------------------+
+        |magic number       |
+        |size in dimension 0|
+        |size in dimension 1|
+        |size in dimension 2|
+        |       .....       |
+        |size in dimension N|
+        |data               |
+        +-------------------+
+
+        The magic number is an integer (MSB first).
+        The first 2 bytes are always 0.
+
+        The third byte codes the type of the data:
+        0x08: unsigned byte
+        0x09: signed byte
+        0x0B: short (2 bytes)
+        0x0C: int (4 bytes)
+        0x0D: float (4 bytes)
+        0x0E: double (8 bytes)
+
+        The 4-th byte codes the number of dimensions of the vector/matrix:
+        1 for vectors, 2 for matrices....
+
+        The sizes in each dimension are 4-byte integers (MSB first,
+        high endian, like in most non-Intel processors).
+
+        The data is stored like in a C array.
+
+        ----- CRIMES FILE -----
+
+        [offset] [type]          [value]          [description]
+        0000     32 bit integer  0x00000E01(3584) magic number
+        0004     32 bit integer  ??               number of items
+        0008     32 bit integer  ??               number of features x crime
+        0010     64 bit double   ??               crime feature
+        0018     64 bit double   ??               crime feature
+        ........
+        xxxx     64 bit double   ??               crime feature
+
+
+        ----- LABEL FILE -----
+
+        [offset] [type]          [value]          [description]
+        0000     32 bit integer  0x00000C01(3073) magic number (MSB first)
+        0004     32 bit integer  ??               number of items
+        0008     32 bit integer  ??               number classes
+        000C     32 bit integer  ??               label
+        0010     32 bit integer  ??               label
+        ........
+        xxxx     32 bit integer  ??               label
+
+
+        ----- MAP FILE -----
+
+        [offset] [type]          [value]          [description]
+        0000     32 bit integer  0x00000C01(3073) magic number (MSB first)
+        0004     32 bit integer  ??               number of items
+        0008     32 bit integer  0x00000002   (2) number values
+        000C     32 bit integer  ??               binary index
+        0010     32 bit integer  ??               csv index
+        0014     32 bit integer  ??               binary index
+        0018     32 bit integer  ??               csv index
+        ........
+        xxxx     32 bit integer  ??               xxx
     """
 
     msg_load = MsgLoad()
     binary_index = 0  # counter
 
-    stats = {}
+    stats = {
+        'list': class_list
+    }
 
     with open(data_filename, "wb") as data_f:
 
