@@ -1,5 +1,5 @@
 # Data-Mining-Project
-An approach to data mining solving a Kaggle problem with TensorFlow
+An approach to data mining solving a Kaggle problem with TensorFlow.
 
 ## Problem reference
 
@@ -11,4 +11,4 @@ Kaggle is hosting this competition for the machine learning community to use for
 This dataset is brought to you by SF OpenData, the central clearinghouse for data published by the
 City and County of San Francisco.
 
-The dataset is available in this repository.
+The dataset is available in this repository in the `dataset` folder (`train.csv.zip` file).
