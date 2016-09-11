@@ -1,0 +1,21 @@
+{
+	"out_filename": "Filtered_dataset",
+	"train_percentage": 80,
+	"features": [
+		"Dates",
+		"Category",
+		"DayOfWeek",
+		"PdDistrict",
+		"X",
+		"Y"
+	],
+	"feature_class_name": "Category",
+	"class_filter": [ 
+        "LARCENY/THEFT",
+        "NON-CRIMINAL",
+        "OTHER OFFENSES"
+        
+    ],
+	"scaled_sets": true
+}
+

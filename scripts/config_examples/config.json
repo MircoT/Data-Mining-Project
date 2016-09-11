@@ -1,0 +1,16 @@
+{
+	"out_filename": "Competition",
+	"train_percentage": 80,
+	"features": [
+		"Dates",
+		"Category",
+		"DayOfWeek",
+		"PdDistrict",
+		"X",
+		"Y"
+	],
+	"feature_class_name": "Category",
+	"class_filter": [],
+	"scaled_sets": true
+}
+

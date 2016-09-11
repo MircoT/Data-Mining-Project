@@ -62,7 +62,7 @@ def check_value_type(value):
     }
 
 
-def create_report(filename, export=False):
+def create_report(filename, export=True):
     """Analyze and create a report of a CSV file.
 
     This function returns the report dictionary and
