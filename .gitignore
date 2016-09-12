@@ -87,3 +87,6 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# Crimeclassifier log of Tensorboard
+scripts/log

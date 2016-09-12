@@ -1,4 +1,5 @@
 from collections import namedtuple
+from io import BytesIO
 import json
 import zipfile
 import numpy
@@ -250,25 +251,55 @@ def classify(filename, plot=True):
             stats = json.loads(stat_f.read().decode('utf-8'))
 
     # Create the model
-    x = tf.placeholder(tf.float64, [None, feature_size])
-    W = tf.Variable(tf.zeros([feature_size, class_size], dtype=tf.float64))
-    b = tf.Variable(tf.zeros([class_size], dtype=tf.float64))
-    y = tf.nn.softmax(tf.matmul(x, W) + b)
+    with tf.name_scope('input'):
+        x = tf.placeholder(tf.float64, [None, feature_size], name="x")
+
+    with tf.name_scope("weights"):
+        W = tf.Variable(
+            tf.zeros([feature_size, class_size], dtype=tf.float64), name="W")
+
+    with tf.name_scope("biases"):
+        b = tf.Variable(tf.zeros([class_size], dtype=tf.float64), name="b")
+
+    with tf.name_scope("softmax"):
+        y = tf.nn.softmax(tf.matmul(x, W) + b, name="y")
 
     # Define loss and optimizer
-    y_ = tf.placeholder(tf.float64, [None, class_size])
+    y_ = tf.placeholder(tf.float64, [None, class_size], name="y_")
 
-    cross_entropy = tf.reduce_mean(
-        -tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1])
-    )
-    # .minimize = back propagation
-    train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
+    with tf.name_scope('cross_entropy'):
+        cross_entropy = tf.reduce_mean(
+            -tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]),
+            name="reduce_mean"
+        )
+
+    with tf.name_scope('train'):
+        # .minimize = back propagation
+        train_step = tf.train.GradientDescentOptimizer(
+            0.5, name="GDO").minimize(cross_entropy)
+
+    with tf.name_scope('Accuracy'):
+        correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float64))
+
+    # create a summary for our cost and accuracy
+    tf.scalar_summary("cost", cross_entropy)
+    tf.scalar_summary("accuracy", accuracy)
+
+    # merge all summaries into a single "operation" which we can execute in a
+    # session
+    summary_op = tf.merge_all_summaries()
 
     print("@-> Train")
 
     init = tf.initialize_all_variables()
     with tf.Session() as sess:
         sess.run(init)
+
+        ##
+        # Create symmary
+        s_writer = tf.train.SummaryWriter("./log", graph=tf.get_default_graph())
+
         for i in range(int(len(crimes.train) / 1000)):
             batch_xs, batch_ys = crimes.train.next_batch(1000)
 
@@ -280,8 +311,10 @@ def classify(filename, plot=True):
             # print("----- [batch ys] -----\n{}\n LEN({})".format(batch_ys,
             #                                                     len(batch_ys)))
 
-            sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
-
+            _, summary = sess.run(
+                [train_step, summary_op],
+                feed_dict={x: batch_xs, y_: batch_ys})
+            s_writer.add_summary(summary, i)
             ##
             # Training output
             # print("----- [Matrix W] -----\n{}".format(sess.run(W)))
@@ -319,13 +352,10 @@ def classify(filename, plot=True):
         print("--> TRUE Result Class count:\n{}".format(
             dict(zip(res_corr_unique, res_corr_counts))))
 
-        correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
         print("@-> Correct prediction: \n{}".format(
             sess.run(correct_prediction,
                      feed_dict={x: crimes.test.crimes,
                                 y_: crimes.test.labels})))
-
-        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float64))
         res_accuracy = sess.run(
             accuracy, feed_dict={
                 x: crimes.test.crimes, y_: crimes.test.labels})
@@ -341,10 +371,24 @@ def classify(filename, plot=True):
         res_logloss = sess.run(logloss)
         print("!!-> [Logloss] = {:.5f}".format(res_logloss))
 
-        gen_confusion_matrix(test_res, test_res_correct, stats['list'])
+        confusion_matrix = gen_confusion_matrix(
+            test_res, test_res_correct, stats['list'])
+
+        ##
+        # Add image to TensorBoard
+        if confusion_matrix is not list:
+            image = tf.image.decode_png(
+                confusion_matrix.getvalue(), channels=4)
+            # Add the batch dimension
+            image = tf.expand_dims(image, 0)
+            # Add image to summary
+            add_image_op = tf.image_summary("Confusion Matrix", image)
+            image_summary = sess.run(add_image_op)
+            s_writer.add_summary(image_summary)
 
 
-def gen_confusion_matrix(res, correct_res, classes, normalized=True, plot=True):
+def gen_confusion_matrix(res, correct_res, classes,
+                         normalized=True, plot=True):
     """Create confusion matrix from results.
 
     Params:
@@ -371,7 +415,7 @@ def gen_confusion_matrix(res, correct_res, classes, normalized=True, plot=True):
                 row[pos] = float(row[pos] / len(res))
 
     if plot:
-        plot_confusion_matrix(matrix, classes)
+        return plot_confusion_matrix(matrix, classes)
     else:
         print("------- Confusion Matrix -------")
         for row in matrix:
@@ -406,7 +450,15 @@ def plot_confusion_matrix(matrix, classes):
     tick_marks = numpy.arange(len(classes))
     plt.xticks(tick_marks, classes, rotation=45)
     plt.yticks(tick_marks, classes)
-    plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
+
+    # Binary for TensorBoard
+    buf = BytesIO()
+    plt.savefig(
+        buf, format='png', dpi=100, pad_inches=2.0, bbox_inches='tight')
+    buf.seek(0)
+
     plt.show()
+
+    return buf

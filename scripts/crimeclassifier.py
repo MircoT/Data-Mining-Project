@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import crimeclassifier
 from sys import exit
 from sys import argv
