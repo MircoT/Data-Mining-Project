@@ -33,13 +33,25 @@ python crimeclassifier.py genReport ../datasets/train.csv.zip
 To generate the binary file useful for the classification:
 
 ```
+# From scripts folder
 python crimeclassifier.py genBin train.csv.zip_report.json config_examples/config_with_class_filter.json
 ```
 
 To proceed with the classification of the binary generated with the previous command use the following lines:
 
 ```
+# From scripts folder
 python crimeclassifier.py classify ../datasets/Filtered_dataset.zip 
+```
+
+## TensorBoard
+
+The classify command generate automatically a log folder to open with TensorBoard. Results of each command
+executed will be stored inside this log folder, so if you want a clean report delete lof folder first.
+
+```
+# From scripts folder
+tensorboard --logdir ./log   
 ```
 
 ## Example config file
