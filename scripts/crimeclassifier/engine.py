@@ -297,7 +297,7 @@ def classify(filename, plot=True):
         sess.run(init)
 
         ##
-        # Create symmary
+        # Create summary
         s_writer = tf.train.SummaryWriter("./log", graph=tf.get_default_graph())
 
         for i in range(int(len(crimes.train) / 1000)):
